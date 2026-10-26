@@ -9,7 +9,8 @@
     "expo-system-ui": "~58.0.6",
     "react": "19.3.0",
     "react-native": "0.88.0",
-    "installed-apps": "file:./modules/installed-apps"
+    "installed-apps": "file:./modules/installed-apps",
+    "expo-splash-screen": "~31.0.0"
   },
   "scripts": {
     "start": "expo start",

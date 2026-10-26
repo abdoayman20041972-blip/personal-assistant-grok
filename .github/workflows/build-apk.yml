@@ -43,22 +43,53 @@ jobs:
       - name: Expo prebuild (Android)
         run: npx expo prebuild --platform android --non-interactive --clean
 
-      - name: Build debug APK
+      - name: Use debug keystore for release (CI installable APK)
+        run: |
+          # Make release build installable without a custom keystore
+          python3 << 'PY'
+          from pathlib import Path
+          p = Path("android/app/build.gradle")
+          t = p.read_text()
+          # Ensure release uses signingConfigs.debug
+          if "signingConfig signingConfigs.debug" not in t or "buildTypes" in t:
+              import re
+              # Replace release block to sign with debug
+              t2 = re.sub(
+                  r"(release\s*\{)",
+                  r"\1\n            signingConfig signingConfigs.debug",
+                  t,
+                  count=1,
+              )
+              if t2 == t:
+                  # fallback: inject after buildTypes {
+                  t2 = t.replace(
+                      "buildTypes {",
+                      "buildTypes {\n        release {\n            signingConfig signingConfigs.debug\n            minifyEnabled false\n        }\n        /*patched*/",
+                      1,
+                  )
+              p.write_text(t2)
+              print("Patched android/app/build.gradle for debug-signed release")
+          else:
+              print("Already configured")
+          PY
+          grep -n "signingConfig\|buildTypes\|release" android/app/build.gradle | head -40
+
+      - name: Build RELEASE APK (embeds JS bundle)
         working-directory: android
         run: |
           chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon --stacktrace
+          ./gradlew assembleRelease --no-daemon --stacktrace
 
       - name: Locate and stage APK
         run: |
-          APK=$(find android -name "*.apk" -type f | head -n 1)
+          APK=$(find android/app/build/outputs/apk -name "*.apk" -type f | head -n 1)
           echo "Found: $APK"
           ls -lh "$APK"
-          cp "$APK" "$GITHUB_WORKSPACE/iftahli-debug.apk"
+          cp "$APK" "$GITHUB_WORKSPACE/iftahli-release.apk"
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: iftahli-apk
-          path: iftahli-debug.apk
+          path: iftahli-release.apk
           retention-days: 14

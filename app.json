@@ -25,7 +25,17 @@
         "backgroundColor": "#080e0c"
       }
     },
-    "plugins": [],
+    "plugins": [
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash.png",
+          "backgroundColor": "#080e0c",
+          "resizeMode": "cover",
+          "imageWidth": 300
+        }
+      ]
+    ],
     "extra": {
       "eas": {
         "projectId": "0fbd5d49-d733-4a31-a753-38aa91621c01"
